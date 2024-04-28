@@ -4,7 +4,7 @@ env_name:CarFindFlagMEnv
 seed:0
 start_timesteps:2000
 eval_freq:10000
-max_timesteps:1000000000.0
+max_timesteps:2000000.0
 expl_noise:0.3
 batch_size:64
 discount:0.99
@@ -14,7 +14,7 @@ noise_clip:0.05
 policy_freq:2
 save_model:True
 load_model:
-directory:./results/CarFindFlagMEnv-run316/
+directory:./results/CarFindFlagMEnv-run618/
 max_episode_length:10
 ATTACK:True
 attack_method:black
@@ -26,5 +26,7 @@ attack_target_model:./TargetModel/
 delta:0.05
 isWeak:False
 lrs:2
+attack_random_seed:0
 multiples_of_v:1
-
+beginAttackK:0
+describe:ddgp CarFindFlagMEnv black

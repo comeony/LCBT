@@ -258,25 +258,26 @@ def test(args):
 	elif args.policy == "DDPG":
 		policy = DDPG.DDPG(**kwargs)
 
-	policy.load("./TargetModel/CarFindFlag3MEnv/target5")
-	for i in range(10):
-		eval_policy(policy, args.env_name, args.seed)
+	test_target = args.attack_target_model + args.env_name + "/target"
+	policy.load(test_target)
+	for i in range(1):
+		eval_policy(policy, args.env_name, args.seed,100)
 
 if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--policy", default="TD3")                  # Policy name (TD3, DDPG or OurDDPG)
-	parser.add_argument("--mode", default="train")                  # Policy name (TD3, DDPG or OurDDPG)
+	parser.add_argument("--mode", default="test")                  # Policy name (TD3, DDPG or OurDDPG)
 	parser.add_argument("--env_name", default="CarFindFlag3MEnv")          # OpenAI gym environment name
 	parser.add_argument("--seed", default=1, type=int)              # Sets Gym, PyTorch and Numpy seeds
-	parser.add_argument("--start_timesteps", default=2000, type=int)# Time steps initial random policy is used
+	parser.add_argument("--start_timesteps", default=500, type=int)# Time steps initial random policy is used
 	parser.add_argument("--eval_freq", default=10000, type=int)       # How often (time steps) we evaluate
-	parser.add_argument("--max_timesteps", default=1e9, type=int)   # Max time steps to run environment
-	parser.add_argument("--expl_noise", default=0.3)                # Std of Gaussian exploration noise
+	parser.add_argument("--max_timesteps", default=2e6, type=int)   # Max time steps to run environment
+	parser.add_argument("--expl_noise", default=0.1)                # Std of Gaussian exploration noise
 	parser.add_argument("--batch_size", default=64, type=int)      # Batch size for both actor and critic
 	parser.add_argument("--discount", default=0.99)                 # Discount factor
 	parser.add_argument("--tau", default=0.005)                     # Target network update rate
-	parser.add_argument("--policy_noise", default=0.02)              # Noise added to target policy during critic update
+	parser.add_argument("--policy_noise", default=0.03)              # Noise added to target policy during critic update
 	parser.add_argument("--noise_clip", default=0.05)                # Range to clip target policy noise
 	parser.add_argument("--policy_freq", default=2, type=int)       # Frequency of delayed policy updates
 	parser.add_argument("--save_model", default=True)        # Save model and optimizer parameters
@@ -295,7 +296,8 @@ if __name__ == "__main__":
 	parser.add_argument('--delta', default=0.05, type=float)
 	parser.add_argument('--isWeak',default=False, type=bool)
 	parser.add_argument("--attack_random_seed", default=0, type=int)  # Sets Gym, PyTorch and Numpy seeds
-	parser.add_argument('--multiples_of_v', default=2, type=int)
+	parser.add_argument('--multiples_of_v', default=1, type=int)
+	parser.add_argument('--beginAttackK', default=100, type=int)
 	parser.add_argument('--lrs', default=2, type=int)
 	args = parser.parse_args()
 	attacker = None
@@ -357,7 +359,7 @@ if __name__ == "__main__":
 		kwargs["noise_clip"] = args.noise_clip * max_action
 		kwargs["policy_freq"] = args.policy_freq
 		targetAgent = TD3.TD3(**kwargs)
-		attack_target_model = args.attack_target_model +args.env_name +"/target5"
+		attack_target_model = args.attack_target_model +args.env_name +"/target"
 		print(attack_target_model)
 		targetAgent.load(attack_target_model)
 		# targetAgent, s_dim, a_dim, min_a, max_a, min_s, max_s,args

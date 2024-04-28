@@ -9,7 +9,7 @@ min_action_std:0.01
 action_std_decay_freq:2500
 K_epochs:80
 max_episode_length:10
-max_training_epochs:5000000
+max_training_epochs:100000
 ATTACK:True
 attack_method:black
 ls:1.0
@@ -19,6 +19,7 @@ ra_piece:32
 attack_target_model:./TargetModel/
 delta:0.05
 isWeak:False
-multiples_of_v:4
+multiples_of_v:2
 lrs:1
-describe:PPO黑盒攻击ControlSlideEnv
+attack_random_seed:0
+beginAttackK:0

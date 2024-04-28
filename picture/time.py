@@ -37,21 +37,18 @@ def findStepsIndex(steps):
     return index
 
 
-ddpgBpath = path + "/ddpg/b5_1/times.npy"
+ddpgBpath = path + "/ddpg/b/times.npy"
 ddpgBTime = np.load(ddpgBpath)
-ddpgWpath = path + "/ddpg/b5_1/times.npy"
-ddpgWTime = np.load(ddpgWpath)
 
 
-ppoBpath = path + "/TD3/b5_2/times.npy"
-ppoBTime = np.load(ppoBpath)
-ppoWpath = path + "/TD3/b5_2/times.npy"
-ppoWTime = np.load(ppoWpath)
+td3Bpath = path + "/TD3/b/times.npy"
+td3BTime = np.load(td3Bpath)
+
 
 
 dstep, dpercent = totalTime(ddpgBTime)
 
-pstep, ppercent = totalTime(ppoBTime)
+tstep, tpercent = totalTime(td3BTime)
 
 
 plt.rcParams['xtick.direction'] = 'in'
@@ -69,12 +66,13 @@ fig, ax = plt.subplots(1, 1)
 
 plt.ticklabel_format(style='sci', scilimits=(0,0))
 
-ax.plot(pstep, ppercent, color="#8e6fad", linestyle='-',linewidth=1.5)#,marker="o",markevery=marke,markersize = 6)
+ax.plot(tstep, tpercent, color="#8e6fad", linestyle='-',linewidth=1.5)#,marker="o",markevery=marke,markersize = 6)
 
 ax.plot(dstep, dpercent, color="#c72f2f", linestyle='-',linewidth=1.5)#,marker="x",markevery=marke,markersize = 6)
 
 ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
-ax.legend(labels=["Attack Time Percentage in LCBT on TD3","Attack Time Percentage in LCBT on DDPG"], fontsize=14,loc='upper right')#, ncol=3)
+plt.ticklabel_format(axis="y", style='plain')
+ax.legend(labels=["Attack Time Percentage in LCBT on TD3","Attack Time Percentage in LCBT on DDPG"], fontsize=14,loc='lower right')#, ncol=3)
 ax.set_xlabel("Steps",fontsize = 14)#,fontsize=18)
 ax.set_ylabel("Time Percentage",fontsize = 14)#,fontsize=18)
 plt.title("Environment 3")

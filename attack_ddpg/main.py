@@ -11,15 +11,14 @@ from evaluator import Evaluator
 from ddpg import DDPG
 from util import *
 import sys
-
 sys.path.append("..")
 from attacker.Attacker import Attacker
 from env.ControlSlide import ControlSlideEnv
+from env.CarFindFlag import CarFindFlagEnv
+from env.CarFindFlag_e import CarFindFlagEEnv
+import math
 
-
-
-def train(train_epoch, agent, env, evaluate, validate_steps, output, max_episode_length=None, debug=False,
-          attacker=None):
+def train(train_epoch, agent, env,  evaluate, validate_steps, output, max_episode_length=None, debug=False,attacker = None):
     agent.is_training = True
     step = episode = episode_steps = 0
     episode_reward = 0.
@@ -46,7 +45,7 @@ def train(train_epoch, agent, env, evaluate, validate_steps, output, max_episode
         # env response with next_observation, reward, terminate_info
         observation2, reward, done, info = env.step(tarAction)
         observation2 = deepcopy(observation2)
-        if max_episode_length and episode_steps >= max_episode_length - 1:
+        if max_episode_length and episode_steps >= max_episode_length -1:
             done = True
 
         if args.ATTACK:
@@ -54,9 +53,9 @@ def train(train_epoch, agent, env, evaluate, validate_steps, output, max_episode
 
         # agent observe and update policy
         agent.observe(reward, observation2, done)
-        if step > args.warmup:
+        if step > args.warmup :
             agent.update_policy()
-
+        
         # [optional] evaluate
 
         if evaluate is not None and validate_steps > 0 and step % validate_steps == 0:
@@ -65,15 +64,15 @@ def train(train_epoch, agent, env, evaluate, validate_steps, output, max_episode
             prYellow('[Evaluate] Step_{:07d}: mean_reward:{}'.format(step, validate_reward))
             if validate_reward >= 40 and validate_reward <= 70:
                 agent.save_model(output + str(step) + "_" + str(validate_reward))
-        # update
+        # update 
         step += 1
         episode_steps += 1
         episode_reward += reward
         observation = deepcopy(observation2)
 
-        if done:  # end of episode
+        if done: # end of episode
             if episode % 100 == 0:
-                prGreen('#{}: episode_reward:{} steps:{}'.format(episode, episode_reward, step))
+                prGreen('#{}: episode_reward:{} steps:{}'.format(episode,episode_reward,step))
 
             agent.memory.append(
                 observation,
@@ -82,8 +81,8 @@ def train(train_epoch, agent, env, evaluate, validate_steps, output, max_episode
             )
             if episode % 10000 == 0:
                 agent.save_model(output + str(episode) + "_" + str(episode_reward))
-                np.save(output + "reward.npy", np.array(totalReward))
-                np.save(output + "steps.npy", np.array(e_t))
+                np.save(output + "reward.npy",np.array(totalReward))
+                np.save(output + "steps.npy",np.array(e_t))
                 if args.ATTACK:
                     np.save(output + "sim.npy", np.array(attacker.similarity))
             # [optional] save intermideate model
@@ -92,7 +91,7 @@ def train(train_epoch, agent, env, evaluate, validate_steps, output, max_episode
                 attacker.update(tarj)
                 tarj = []
 
-            # if episode_steps > 5:
+            #if episode_steps > 5:
             episode += 1
             # reset
             e_t.append(episode_steps)
@@ -101,8 +100,8 @@ def train(train_epoch, agent, env, evaluate, validate_steps, output, max_episode
             episode_steps = 0
             episode_reward = 0.
 
+def test(num_episodes, agent, env, evaluate, model_path, visualize=True, debug=False,attacker = 0):
 
-def test(num_episodes, agent, env, evaluate, model_path, visualize=True, debug=False, attacker=0):
     agent.load_weights(model_path)
     print(model_path)
     agent.is_training = False
@@ -141,7 +140,7 @@ def test(num_episodes, agent, env, evaluate, model_path, visualize=True, debug=F
         prYellow('[Evaluate] #Episode{}: episode_reward:{}'.format(episode, episode_reward))
         result.append(episode_reward)
 
-    print(result)
+    print(sum(result) / len(result))
 
     '''
     for i in range(num_episodes):
@@ -153,59 +152,64 @@ def test(num_episodes, agent, env, evaluate, model_path, visualize=True, debug=F
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='PyTorch on TORCS with Multi-modal')
-    # ControlSlideEnv:
-    parser.add_argument('--mode', default='train', type=str, help='support option: train/test')
+    #ControlSlideEnv:
+    parser.add_argument('--mode', default='test', type=str, help='support option: train/test')
     parser.add_argument('--env_name', default='ControlSlideEnv', type=str, help='open-ai gym environment')
+    #Pendulum-v0 MountainCarContinuous-v0 ControlSlideEnv CarFindFlagEnv
     parser.add_argument('--hidden1', default=400, type=int, help='hidden num of first fully connect layer')
     parser.add_argument('--hidden2', default=300, type=int, help='hidden num of second fully connect layer')
     parser.add_argument('--rate', default=0.001, type=float, help='learning rate')
     parser.add_argument('--prate', default=0.0001, type=float, help='policy net learning rate (only for DDPG)')
-    parser.add_argument('--warmup', default=10000, type=int,
-                        help='time without training but only filling the replay memory')
+    parser.add_argument('--warmup', default=10000, type=int, help='time without training but only filling the replay memory')
     parser.add_argument('--discount', default=0.99, type=float, help='')
     parser.add_argument('--bsize', default=64, type=int, help='minibatch size')
     parser.add_argument('--rmsize', default=6000000, type=int, help='memory size')
     parser.add_argument('--window_length', default=1, type=int, help='')
     parser.add_argument('--tau', default=0.001, type=float, help='moving average for target network')
     parser.add_argument('--ou_theta', default=0.15, type=float, help='noise theta')
-    parser.add_argument('--ou_sigma', default=0.4, type=float, help='noise sigma')
+    parser.add_argument('--ou_sigma', default=0.5, type=float, help='noise sigma')
     parser.add_argument('--ou_mu', default=0.0, type=float, help='noise mu')
-    parser.add_argument('--validate_episodes', default=20, type=int,
-                        help='how many episode to perform during validate experiment')
+    parser.add_argument('--validate_episodes', default=20, type=int, help='how many episode to perform during validate experiment')
     parser.add_argument('--max_episode_length', default=10, type=int, help='')
-    parser.add_argument('--validate_steps', default=500, type=int,
-                        help='how many steps to perform a validate experiment')
+    parser.add_argument('--validate_steps', default=500, type=int, help='how many steps to perform a validate experiment')
     parser.add_argument('--output', default='output/attack_ddpg', type=str, help='')
     parser.add_argument('--debug', dest='debug', action='store_true')
     parser.add_argument('--init_w', default=0.003, type=float, help='')
-    parser.add_argument('--train_epoch', default=5000000, type=int, help='train epoch')
+    parser.add_argument('--train_epoch', default=100000, type=int, help='train epoch')
     parser.add_argument('--epsilon', default=1000, type=int, help='linear decay of exploration policy')
-    parser.add_argument('--seed', default=2, type=int, help='')
+    parser.add_argument('--seed', default=0, type=int, help='')
     parser.add_argument('--resume', default='default', type=str, help='Resuming model path for testing')
     # parser.add_argument('--l2norm', default=0.01, type=float, help='l2 weight decay') # TODO
     # parser.add_argument('--cuda', dest='cuda', action='store_true') # TODO
-    # attack
-    parser.add_argument('--ATTACK', default=False, type=bool, help='Attack or not')
-    parser.add_argument('--attack_method', default="black", help='white or black')
+    #attack
+    parser.add_argument('--ATTACK', default=True, type=bool, help='Attack or not')
+    parser.add_argument('--attack_method', default="black",help='white or black')
     parser.add_argument('--ls', default=1.0, type=float)
     parser.add_argument('--p', default=0.5, type=float)
-    parser.add_argument('--rs_piece', default=16, type=int, help="The number of shards per dimension in the state")
-    parser.add_argument('--ra_piece', default=32, type=float)
+    parser.add_argument('--rs_piece', default=16, type=int,help="The number of shards per dimension in the state")
+    parser.add_argument('--ra_piece', default= 32, type=float)
     parser.add_argument('--attack_target_model', default="./TargetModel/")
     parser.add_argument('--delta', default=0.05, type=float)
     parser.add_argument('--isWeak', default=False, type=bool)
     parser.add_argument('--multiples_of_v', default=4, type=int)
+    parser.add_argument("--attack_random_seed", default=0, type=int)
     parser.add_argument('--lrs', default=1, type=int)
-    parser.add_argument('--describe', default="", )
+    parser.add_argument('--beginAttackK', default=0, type=int)
     args = parser.parse_args()
     args.output = get_output_folder(args.output, args.env_name)
     print(args.output)
     if args.resume == 'default':
-        args.resume = './output/attack_ddpg/' + args.env_name + "-run6/153000_10.0"
+        args.resume = args.attack_target_model + args.env_name + "/target7_"
 
     if args.env_name == "ControlSlideEnv":
         print(args.env_name)
         env = ControlSlideEnv()
+    elif args.env_name == "CarFindFlagEnv":
+        print(args.env_name)
+        env = CarFindFlagEnv()
+    elif args.env_name == "CarFindFlagEEnv":
+        print(args.env_name)
+        env = CarFindFlagEEnv()
     else:
         env = NormalizedEnv(gym.make(args.env_name))
     if args.seed > 0:
@@ -219,14 +223,14 @@ if __name__ == "__main__":
     max_action = env.action_space.high
     min_action = env.action_space.low
     max_reward = env.reward_range
-    print(nb_states, max_state, min_state)
-    print(nb_actions, max_action, min_action)
+    print(nb_states,max_state,min_state)
+    print(nb_actions,max_action,min_action)
     print(max_reward)
 
     attacker = 0
     if args.ATTACK:
         targetAgent = DDPG(nb_states, nb_actions, args)
-        attack_target_model = args.attack_target_model + args.env_name + "/target7_"
+        attack_target_model = args.attack_target_model + args.env_name + "/target_"
         print(attack_target_model)
         targetAgent.load_weights(attack_target_model)
         targetAgent.is_training = False
@@ -236,8 +240,8 @@ if __name__ == "__main__":
         attacker = Attacker(attacker_policy, nb_states, nb_actions, min_action, max_action, min_state, max_state, args)
 
     agent = DDPG(nb_states, nb_actions, args)
-    evaluate = Evaluator(args.validate_episodes,
-                         args.validate_steps, args.output, max_episode_length=args.max_episode_length)
+    evaluate = Evaluator(args.validate_episodes, 
+        args.validate_steps, args.output, max_episode_length=args.max_episode_length)
 
     ################## save args ########################
     argsdict = args.__dict__
@@ -247,13 +251,12 @@ if __name__ == "__main__":
 
     if args.mode == 'train':
         train(args.train_epoch, agent, env, evaluate,
-              args.validate_steps, args.output, max_episode_length=args.max_episode_length, debug=args.debug,
-              attacker=attacker)
+            args.validate_steps, args.output, max_episode_length=args.max_episode_length, debug=args.debug,attacker = attacker)
 
     elif args.mode == 'test':
         print(args.resume)
-        test(10, agent, env, evaluate, args.resume,
-             visualize=False, debug=args.debug, attacker=attacker)
+        test(100, agent, env, evaluate, args.resume,
+            visualize=False, debug=args.debug,attacker = attacker)
 
     else:
         raise RuntimeError('undefined mode {}'.format(args.mode))

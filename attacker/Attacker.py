@@ -75,7 +75,6 @@ class Attacker:
         self.H = args.max_episode_length
         self.p = args.p
         self.ls = args.ls
-        self.alpha = args.alpha
         self.rs_piece = args.rs_piece
         self.attack_method = args.attack_method
         self.attacker_policy = attacker_policy
@@ -107,7 +106,7 @@ class Attacker:
         tarAction = self.attacker_policy(state)
 
         # The target action is similar to the original action
-        if (self.isSimAction(tarAction,orAciton)):
+        if self.K < self.beginAttackK or self.isSimAction(tarAction,orAciton):
             self.no_attack_num += 1
             return orAciton, 1
 
@@ -131,17 +130,20 @@ class Attacker:
             elif self.attack_method == 'white' and \
                     (self.env == 'CarFindFlagMEnv' or self.env == 'CarFindFlag3MEnv' or self.env == 'CarFindFlag5MEnv'):
                 action = [0.0] * self.a_dim
-                # 依据概率self.alpha 选择攻击为最差动作，
-                # if random.random() < self.alpha:
-                # 前1000轮不攻击
                 if self.K > self.beginAttackK:
                     for i in range(self.a_dim):
                         if state[i] <= 4.0:
                             action[i] = -1.0
                         else:
                             action[i] = 1.0
-                else:
-                    action = orAciton
+                # if self.K > self.beginAttackK:
+                #     for i in range(self.a_dim):
+                #         if state[i] <= 4.0:
+                #             action[i] = -1.0
+                #         else:
+                #             action[i] = 1.0
+                # else:
+                #     action = orAciton
             if self.isWeak == True:
                 return action, 0.0
             else:
@@ -193,10 +195,13 @@ class Attacker:
 
     # [tarAction,reward,state,next_state,wh]
     def update(self, tarj):
+        self.K += 1
+        if self.K <= self.beginAttackK:
+            return
         #self.actionTree.update(tarj)
         if self.K % 10 == 0:
-            print(self.no_attack_num,len(tarj),self.actionTree.nodeNums)
-        self.similarity.append([self.no_attack_num,len(tarj),self.actionTree.nodeNums])
+            print(self.no_attack_num, len(tarj), self.actionTree.nodeNums)
+        self.similarity.append([self.no_attack_num,len(tarj), self.actionTree.nodeNums])
         self.no_attack_num = 0
         Rho = 1.0
         G = 0.0
@@ -211,14 +216,14 @@ class Attacker:
             state = tarj[tH][2]
             next_state = tarj[tH][3]
             wh = tarj[tH][4]
-            Rho = Rho * wh
+
             actionNode, p = self.actionTree.getActionNode(action,tH)
             actionNode.T += 1
             t = actionNode.T
             state_id = self.similarStateId(state)
 
             actionNode.Q[state_id] = (1 - 1/t) * actionNode.Q[state_id] + (1 / t) * (reward + G * Rho)
-
+            Rho = Rho * wh
             G = G + reward
             if(actionNode.left == None and actionNode.right == None and self.canSegment(tH,t,actionNode.deep)):
             # if (actionNode.left == None and actionNode.right == None and self.canSegmentByself(tH, t, actionNode)):
@@ -238,7 +243,6 @@ class Attacker:
 
             tH -= 1
 
-        self.K += 1
         if self.K % 2000 == 0 and self.lrs > 1:
             self.lrs -= 1
 

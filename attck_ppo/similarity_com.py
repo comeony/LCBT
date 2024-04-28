@@ -22,7 +22,7 @@ def getDistance(a, b):
 	return dist
 
 #################################### Testing ###################################
-def test(args):
+def test(args, attacked_path):
     env_name = args.env_name
     has_continuous_action_space = True
     max_ep_len = args.max_episode_length           # max timesteps in one episode
@@ -65,9 +65,7 @@ def test(args):
     torch.manual_seed(random_seed)
     env.seed(random_seed)
     np.random.seed(random_seed)
-    directory = "./TargetModel/ControlSlideEnv/target7_model.pth"
-    target_path = args.target_model + args.env_name + "/target7_model.pth"
-    attacked_path = args.attacked_model + args.env_name + "/" + args.attack_method + "/attacked3_model.pth"
+    target_path = args.target_model + args.env_name + "/target_model.pth"
 
     t_agent.load(target_path)
     a_agent.load(attacked_path)
@@ -96,8 +94,6 @@ def test(args):
                 break
 
         test_running_reward +=  ep_reward
-        if ep % 100 == 0:
-            print('Episode: {} \t\t Reward: {}'.format(ep, round(ep_reward, 2)))
 
     env.close()
     print('similarity: {}'.format(sim_step / total_step))
@@ -122,12 +118,13 @@ parser.add_argument('--max_episode_length', default=10, type=int, help='')
 parser.add_argument('--max_training_epochs', default=5000000, type=int, help='')
 parser.add_argument('--target_model', default="./TargetModel/")
 parser.add_argument('--attacked_model', default="./AttackedModel/")
-parser.add_argument('--attack_method', default="white", help='white or black')
+parser.add_argument('--attack_method', default="black", help='white or black')
 parser.add_argument('--ra_piece', default=32, type=int)
 args = parser.parse_args()
-
-
-if args.mode == 'test':
-    test(args)
-else:
-    print('error')
+for i in [2, 3, 4]:
+    print(i)
+    attacked_path = args.attacked_model + args.env_name + "/" + args.attack_method + "/" + str(i) + "_model.pth"
+    if args.mode == 'test':
+        test(args, attacked_path)
+    else:
+        print('error')

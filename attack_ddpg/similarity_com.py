@@ -62,8 +62,8 @@ def test(num_episodes, target_agent, attacked_agent,env, ra):
             # update
             episode_reward += reward
             episode_steps += 1
-        if episode % 100 == 0:
-            prYellow('[Evaluate] #Episode{}: episode_reward:{}'.format(episode, episode_reward))
+        # if episode % 100 == 0:
+        #     prYellow('[Evaluate] #Episode{}: episode_reward:{}'.format(episode, episode_reward))
         result.append(episode_reward)
     print('similarity: {}'.format(sim_step / total_step))
 
@@ -136,20 +136,21 @@ if __name__ == "__main__":
 
 
     target_agent = DDPG(nb_states, nb_actions, args)
-    target_path = args.target_model + args.env_name + "/target7_"
+    target_path = args.target_model + args.env_name + "/target_"
     target_agent.load_weights(target_path)
     target_agent.eval()
     target_agent.is_training = False
+    for i in [2, 3, 4]:
+        print(i)
+        attacked_agent = DDPG(nb_states, nb_actions, args)
+        attacked_path = args.attacked_model + args.env_name + "/" + args.attack_method + "/" + str(i) + "_"
+        attacked_agent.load_weights(attacked_path)
+        attacked_agent.eval()
+        attacked_agent.is_training = False
 
-    attacked_agent = DDPG(nb_states, nb_actions, args)
-    attacked_path = args.attacked_model + args.env_name + "/" + args.attack_method + "/attacked3_"
-    attacked_agent.load_weights(attacked_path)
-    attacked_agent.eval()
-    attacked_agent.is_training = False
+        ra = getra_(args.ra_piece, min_action,max_action)
+        if args.mode == 'test':
+            test(10000, target_agent, attacked_agent,env, ra)
 
-    ra = getra_(args.ra_piece, min_action,max_action)
-    if args.mode == 'test':
-        test(10000, target_agent, attacked_agent,env, ra)
-
-    else:
-        raise RuntimeError('undefined mode {}'.format(args.mode))
+        else:
+            raise RuntimeError('undefined mode {}'.format(args.mode))

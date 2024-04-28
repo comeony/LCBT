@@ -9,9 +9,11 @@ import matplotlib.pyplot as plt
 ALLtargetReward = {
     "./s/ddpg" : 6.603,
     "./s/td3" : 7.399,
-    "./f/ddpg" : 6.1867,
+    "./f/ddpg" : 6.179,
     "./f/ppo" : 6.05,
     "./f/td3" : 6.226,
+    "./t/ddpg": 5.727,
+    "./t/td3": 6.932
 }
 # colors = ["#2779ac",
 # "#8e6fad",#"#f2811d"
@@ -177,7 +179,67 @@ for path in p:
         for i in range(0,int(len(bsteps))):
             targetReward.append(ALLtargetReward[path])
 
+    elif path == "./t/ddpg":
+        sp = 10
+        tempb = np.load(bpath + "/reward.npy")
+        tempw = np.load(wpath + "/reward.npy")
+        tempr = np.load(npath + "/reward.npy")
+        l = min(len(tempw) // sp, len(tempb) // sp, 100000 // sp)
+        lr = min(100000 // sp, len(tempr) // sp)
 
+        sub_arrays = np.array_split(tempb, len(tempb) // sp)
+        tempb = [np.mean(sub_array) for sub_array in sub_arrays]
+
+        sub_arrays = np.array_split(tempw, len(tempw) // sp)
+        tempw = [np.mean(sub_array) for sub_array in sub_arrays]
+
+        sub_arrays = np.array_split(tempr, len(tempr) // sp)
+        tempr = [np.mean(sub_array) for sub_array in sub_arrays]
+
+        for i in range(0, int(l), 40):
+            allsteps.append(i * sp * 10)
+            blackreward.append(tempb[i])
+            whitereward.append(tempw[i])
+            targetReward.append(ALLtargetReward[path])
+
+            if i < lr:
+                trainsteps.append(i * sp * 10)
+                realreward.append(tempr[i])
+        bsteps = allsteps
+        wsteps = allsteps
+        nsteps = allsteps
+
+    elif path == "./t/td3":
+        sp = 10
+        tempb = np.load(bpath + "/reward.npy")
+        tempw = np.load(wpath + "/reward.npy")
+        tempr = np.load(npath + "/reward.npy")
+        l = min(len(tempw)//sp, len(tempb)//sp, 100000 // sp)
+        lr = min(100000 // sp, len(tempr)//sp)
+
+        sub_arrays = np.array_split(tempb, len(tempb) // sp)
+        tempb = [np.mean(sub_array) for sub_array in sub_arrays]
+
+        sub_arrays = np.array_split(tempw, len(tempw) // sp)
+        tempw = [np.mean(sub_array) for sub_array in sub_arrays]
+
+        sub_arrays = np.array_split(tempr, len(tempr) // sp)
+        tempr = [np.mean(sub_array) for sub_array in sub_arrays]
+
+
+        for i in range(0,int(l),40):
+            allsteps.append(i * sp * 10)
+            blackreward.append(tempb[i])
+            whitereward.append(tempw[i])
+            targetReward.append(ALLtargetReward[path])
+
+            if i < lr:
+                trainsteps.append(i * sp * 10)
+                realreward.append(tempr[i])
+
+        bsteps = allsteps
+        wsteps = allsteps
+        nsteps = allsteps
 
     font = {'family': 'serif',
             'serif': 'Times New Roman',

@@ -145,7 +145,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--policy", default="TD3")                  # Policy name (TD3, DDPG or OurDDPG)
 	parser.add_argument("--mode", default="test")                  # Policy name (TD3, DDPG or OurDDPG)
-	parser.add_argument("--env_name", default="CarFindFlag3MEnv")          # OpenAI gym environment name
+	parser.add_argument("--env_name", default="CarFindFlagMEnv")          # OpenAI gym environment name
 	parser.add_argument("--seed", default=0, type=int)              # Sets Gym, PyTorch and Numpy seeds
 	parser.add_argument("--start_timesteps", default=2000, type=int)# Time steps initial random policy is used
 	parser.add_argument("--eval_freq", default=10000, type=int)       # How often (time steps) we evaluate
@@ -161,7 +161,7 @@ if __name__ == "__main__":
 	parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
 	parser.add_argument('--target_model', default="./TargetModel/")
 	parser.add_argument('--attacked_model', default="./AttackedModel/")
-	parser.add_argument('--attack_method', default="white", help='white or black')
+	parser.add_argument('--attack_method', default="black", help='white or black')
 	parser.add_argument("--directory", default="./results")
 	parser.add_argument('--ra_piece', default=9, type=int)
 	args = parser.parse_args()
@@ -176,10 +176,9 @@ if __name__ == "__main__":
 		for eachAcg in argsdict:
 			f.writelines(str(eachAcg) + ':' + str(argsdict[eachAcg]) + '\n')
 
-	target_model = args.target_model + args.env_name + "/" + "/target5"
-	attacked_model = args.attacked_model + args.env_name + "/" + args.policy +"/" + args.attack_method +"/8"
-	# 			w7 	   	b7 	    	 w8  	   b8
-	# DDPG   0.82502   0.71381	  0.88053	0.78488
-	# TD3	 0.97271   0.97271	  0.97274	0.97274
-	if args.mode == 'test':
-		test(args, target_model,attacked_model)
+	target_model = args.target_model + args.env_name + "/" + args.policy + "/target"
+	for i in [7, 8, 9, 10]:
+		print(i)
+		attacked_model = args.attacked_model + args.env_name + "/" + args.policy +"/" + args.attack_method +"/" + str(i)
+		if args.mode == 'test':
+			test(args, target_model,attacked_model)

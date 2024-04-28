@@ -16,13 +16,13 @@ ou_mu:0.0
 validate_episodes:20
 max_episode_length:10
 validate_steps:500
-output:output/attack_ddpg/ControlSlideEnv-run122/
+output:output/attack_ddpg/ControlSlideEnv-run184/
 debug:False
 init_w:0.003
-train_epoch:5000000
+train_epoch:100000
 epsilon:1000
-seed:-1
-resume:./output/attack_ddpg/ControlSlideEnv-run6/153000_10.0
+seed:0
+resume:./TargetModel/ControlSlideEnv/target4_
 ATTACK:True
 attack_method:black
 ls:1.0
@@ -33,5 +33,6 @@ attack_target_model:./TargetModel/
 delta:0.05
 isWeak:False
 multiples_of_v:4
+attack_random_seed:0
 lrs:1
-describe:ddpg黑盒攻击ControlSlideEnv
+beginAttackK:0
