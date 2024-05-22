@@ -14,7 +14,7 @@ noise_clip:0.05
 policy_freq:2
 save_model:True
 load_model:
-directory:./results/CarFindFlagMEnv-run624/
+directory:./results/CarFindFlagMEnv-run625/
 max_episode_length:10
 ATTACK:True
 attack_method:black
@@ -26,6 +26,6 @@ attack_target_model:./TargetModel/
 delta:0.05
 isWeak:False
 attack_random_seed:0
-multiples_of_v:1
+multiples_of_v:1.5
 beginAttackK:0
 lrs:2
