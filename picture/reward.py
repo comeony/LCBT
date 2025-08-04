@@ -13,14 +13,15 @@ ALLtargetReward = {
     "./f/ppo" : 6.05,
     "./f/td3" : 6.226,
     "./t/ddpg": 5.727,
-    "./t/td3": 6.932
+    "./t/td3": 6.932,
+    "./t/SAC": 6.921
 }
 # colors = ["#2779ac",
 # "#8e6fad",#"#f2811d"
 # "#349d35",
 # "#c72f2f"]
 colors = ["#219EBC", "#023047", "#FFB703", "#FB8402"]
-p = ["./s/ddpg","./s/td3","./f/ddpg","./f/ppo"]
+p = [ "./s/ddpg", "./s/td3", "./f/ddpg", "./f/ppo", "./t/SAC"]
 
 plt.rcParams['xtick.direction'] = 'in'
 plt.rcParams['ytick.direction'] = 'in'
@@ -84,6 +85,9 @@ for path in p:
     targetReward = []
     allsteps = []
     trainsteps = []
+    nsteps = []
+    bsteps = []
+    wsteps = []
     bpath = path + "/b"
     wpath = path + "/w"
     npath = path + "/n"
@@ -162,6 +166,7 @@ for path in p:
         _, _, nsteps, realreward = stepsReward(dr, tempr, MT)
         for i in range(0,int(len(bsteps))):
             targetReward.append(ALLtargetReward[path])
+        allsteps = bsteps
 
 
     elif path == "./f/ppo":
@@ -178,7 +183,7 @@ for path in p:
         _, _, nsteps, realreward = stepsReward(dr,tempr,MT)
         for i in range(0,int(len(bsteps))):
             targetReward.append(ALLtargetReward[path])
-
+        allsteps = bsteps
     elif path == "./t/ddpg":
         sp = 10
         tempb = np.load(bpath + "/reward.npy")
@@ -209,11 +214,13 @@ for path in p:
         wsteps = allsteps
         nsteps = allsteps
 
-    elif path == "./t/td3":
+    elif path == "./t/td3" or path == "./t/SAC":
         sp = 10
         tempb = np.load(bpath + "/reward.npy")
         tempw = np.load(wpath + "/reward.npy")
         tempr = np.load(npath + "/reward.npy")
+        print(len(tempw), len(tempb), len(tempr))
+
         l = min(len(tempw)//sp, len(tempb)//sp, 100000 // sp)
         lr = min(100000 // sp, len(tempr)//sp)
 
@@ -227,19 +234,22 @@ for path in p:
         tempr = [np.mean(sub_array) for sub_array in sub_arrays]
 
 
-        for i in range(0,int(l),40):
+        # for i in range(0,len(tempw),40):
+        for i in range(0, int(l), 40):
             allsteps.append(i * sp * 10)
-            blackreward.append(tempb[i])
+            if i < len(tempb):
+                bsteps.append(i * sp * 10)
+                blackreward.append(tempb[i])
             whitereward.append(tempw[i])
             targetReward.append(ALLtargetReward[path])
 
             if i < lr:
+                nsteps.append(i * sp * 10)
                 trainsteps.append(i * sp * 10)
                 realreward.append(tempr[i])
-
-        bsteps = allsteps
+        # bsteps = allsteps
         wsteps = allsteps
-        nsteps = allsteps
+
 
     font = {'family': 'serif',
             'serif': 'Times New Roman',
@@ -248,10 +258,12 @@ for path in p:
     plt.rc('font', **font)
     fig, ax = plt.subplots(1, 1)
     #plt.ticklabel_format(style='sci', scilimits=(0,0))
+    print(len(nsteps), len(realreward))
     ax.plot(nsteps, realreward, color=colors[0], linestyle='-',linewidth=1)
     ax.plot(bsteps, blackreward, color=colors[1], linestyle='-',linewidth=1)
-    ax.plot(wsteps, whitereward, color=colors[2],linestyle='-',linewidth=1)
-    ax.plot(bsteps, targetReward, color=colors[3], linestyle=':',linewidth=3)
+    if path != "./t/SAC":
+        ax.plot(wsteps, whitereward, color=colors[2],linestyle='-',linewidth=1)
+    ax.plot(allsteps, targetReward, color=colors[3], linestyle=':',linewidth=3)
 
     ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
     ax.legend(labels=["Attack-free reward","LCBT attack reward", "Oracle attack reward","Target policy reward"], fontsize=15,loc='lower right')#, ncol=3)
